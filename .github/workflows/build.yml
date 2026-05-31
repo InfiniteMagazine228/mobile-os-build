@@ -1,49 +1,34 @@
-name: Build Mobile OS
+name: Build Kernel
 
 on:
   push:
-    branches:
-      - main
-  pull_request:
+    branches: [ main ]
 
 jobs:
   build:
     runs-on: ubuntu-latest
 
     steps:
-      # Lấy code từ repo
       - name: Checkout source
         uses: actions/checkout@v4
 
-      # Cài JDK (cần cho AOSP/ROM)
-      - name: Set up JDK
-        uses: actions/setup-java@v4
-        with:
-          distribution: 'temurin'
-          java-version: '17'
-
-      # Cài dependencies cần thiết
       - name: Install dependencies
         run: |
           sudo apt-get update
           sudo apt-get install -y build-essential git ccache \
-            libncurses5-dev libssl-dev bc flex bison zip unzip
+            libncurses5-dev libssl-dev bc flex bison
 
-      # Kiểm tra file build.sh có tồn tại
-      - name: List files
-        run: ls -R
+      - name: Clone kernel source
+        run: git clone https://github.com/torvalds/linux.git kernel
 
-      # Cấp quyền thực thi cho script
-      - name: Make build.sh executable
-        run: chmod +x build.sh
+      - name: Build kernel
+        run: |
+          cd kernel
+          make O=out ARCH=arm64 defconfig
+          make O=out ARCH=arm64 -j$(nproc)
 
-      # Chạy script build
-      - name: Build OS
-        run: ./build.sh
-
-      # Upload artifact (file build ra)
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
-          name: mobile-os-build
-          path: output/*
+          name: kernel-build
+          path: kernel/out/arch/arm64/boot/Image.gz-dtb
