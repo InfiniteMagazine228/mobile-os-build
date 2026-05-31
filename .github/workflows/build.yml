@@ -11,27 +11,39 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+      # Lấy code từ repo
       - name: Checkout source
         uses: actions/checkout@v4
 
+      # Cài JDK (cần cho AOSP/ROM)
       - name: Set up JDK
         uses: actions/setup-java@v4
         with:
           distribution: 'temurin'
           java-version: '17'
 
+      # Cài dependencies cần thiết
       - name: Install dependencies
         run: |
           sudo apt-get update
           sudo apt-get install -y build-essential git ccache \
-            libncurses5-dev libssl-dev bc flex bison
+            libncurses5-dev libssl-dev bc flex bison zip unzip
 
+      # Kiểm tra file build.sh có tồn tại
+      - name: List files
+        run: ls -R
+
+      # Cấp quyền thực thi cho script
+      - name: Make build.sh executable
+        run: chmod +x build.sh
+
+      # Chạy script build
       - name: Build OS
-        run: |
-          ./build.sh   # script của bạn để compile kernel hoặc ROM
+        run: ./build.sh
 
+      # Upload artifact (file build ra)
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
           name: mobile-os-build
-          path: out/target/product/*.zip
+          path: output/*
